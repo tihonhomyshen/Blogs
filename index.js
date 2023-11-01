@@ -1,12 +1,15 @@
 import express from "express";
 import mongoose from "mongoose";
 
-
 import {loginValidation, registerValidation} from "./validations/authValidation.js";
+import {blogCreateValidation}  from "./validations/blogValidation.js";
+
 
 import checkAuth from './utils/checkAuth.js';
 
 import * as UserController from './controllers/UserController.js'
+import * as BlogController from './controllers/BlogController.js'
+
 
 mongoose
     .connect(
@@ -22,10 +25,12 @@ app.post("/login", loginValidation, UserController.login)
 app.post("/register", registerValidation, UserController.register);
 app.get("/me", checkAuth, UserController.getMe)
 
+
+app.post("/blogs", checkAuth, blogCreateValidation, BlogController.create);
+
 app.listen(4444, (err) => {
     if (err) {
         return console.log(err);
     }
-
     console.log("Server OK");
 });
