@@ -1,5 +1,6 @@
 import express from "express";
 import mongoose from "mongoose";
+import multer from "multer";
 
 import {loginValidation, registerValidation} from "./validations/authValidation.js";
 import {blogCreateValidation}  from "./validations/blogValidation.js";
@@ -19,11 +20,30 @@ mongoose
     .catch((err) => console.log("DB ERROR", err));
 
 const app = express();
+
+const storageImages = multer.diskStorage({
+    destination: (_, __, cb) => {
+        cb(null, 'uploads');
+    },
+    filename: (_, file, cb) => {
+        cb(null, file.originalname);
+    },
+});
+
+const upload = multer({storage: storageImages});
+
 app.use(express.json());
 
 app.post("/login", loginValidation, UserController.login)
 app.post("/register", registerValidation, UserController.register);
 app.get("/me", checkAuth, UserController.getMe)
+
+app.post("/upload", checkAuth, upload.single('image'), (req, res) => {
+        res.json({
+            url: `/uploads/${req.file.originalname}`,
+        });
+
+});
 
 app.get("/blogs", BlogController.getAll);
 app.get("/blogs/:id", BlogController.getOne);
