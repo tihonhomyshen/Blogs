@@ -5,11 +5,12 @@ import multer from "multer";
 import {loginValidation, registerValidation} from "./validations/authValidation.js";
 import {blogCreateValidation}  from "./validations/blogValidation.js";
 
+import {checkAuth, handleErrors} from './middleware/checkAuth.js';
+import {UserController, BlogController} from "./controllers/index.js";
 
-import checkAuth from './middleware/checkAuth.js';
-
-import * as UserController from './controllers/UserController.js'
-import * as BlogController from './controllers/BlogController.js'
+const app = express();
+app.use(express.json());
+app.use("/uploads", express.static("uploads"));
 
 
 mongoose
@@ -19,8 +20,8 @@ mongoose
     .then(() => console.log("DB OK"))
     .catch((err) => console.log("DB ERROR", err));
 
-const app = express();
 
+const upload = multer({storage: storageImages});
 const storageImages = multer.diskStorage({
     destination: (_, __, cb) => {
         cb(null, 'uploads');
@@ -30,12 +31,8 @@ const storageImages = multer.diskStorage({
     },
 });
 
-const upload = multer({storage: storageImages});
-
-app.use(express.json());
-
-app.post("/login", loginValidation, UserController.login)
-app.post("/register", registerValidation, UserController.register);
+app.post("/login", loginValidation, handleErrors, UserController.login)
+app.post("/register", registerValidation, handleErrors, UserController.register);
 app.get("/me", checkAuth, UserController.getMe)
 
 app.post("/upload", checkAuth, upload.single('image'), (req, res) => {
@@ -47,9 +44,9 @@ app.post("/upload", checkAuth, upload.single('image'), (req, res) => {
 
 app.get("/blogs", BlogController.getAll);
 app.get("/blogs/:id", BlogController.getOne);
-app.post("/blogs", checkAuth, blogCreateValidation, BlogController.create);
+app.post("/blogs", checkAuth, blogCreateValidation, handleErrors, BlogController.create);
 app.delete("/blogs/:id", checkAuth, BlogController.remove);
-app.patch("/blogs/:id", checkAuth, BlogController.update);
+app.patch("/blogs/:id", checkAuth, blogCreateValidation, handleErrors, BlogController.update);
 
 
 app.listen(4444, (err) => {
